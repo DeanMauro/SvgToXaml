@@ -55,34 +55,14 @@ namespace SvgToXaml.ViewModels
             var saveDlg = new SaveFileDialog {AddExtension = true, DefaultExt = ".xaml", Filter = "Xaml-File|*.xaml", InitialDirectory = CurrentDir, FileName = outFileName};
             if (saveDlg.ShowDialog() == DialogResult.OK)
             {
-                string namePrefix = null;
-
-                bool useComponentResKeys = false;
-                string nameSpaceName = null;
-                var nameSpace = Microsoft.VisualBasic.Interaction.InputBox("Enter a NameSpace for using static ComponentResKeys (or leave empty to not use it)", "NameSpace");
-                if (!string.IsNullOrWhiteSpace(nameSpace))
-                {
-                    useComponentResKeys = true;
-                    nameSpaceName =
-                        Microsoft.VisualBasic.Interaction.InputBox(
-                            "Enter a Name of NameSpace for using static ComponentResKeys", "NamespaceName");
-                }
-                else
-                {
-                    namePrefix = Microsoft.VisualBasic.Interaction.InputBox("Enter a namePrefix (or leave empty to not use it)", "Name Prefix");
-                    if (string.IsNullOrWhiteSpace(namePrefix))
-                        namePrefix = null;
-
-                }
-
                 outFileName = Path.GetFullPath(saveDlg.FileName);
                 var resKeyInfo = new ResKeyInfo
                 {
                     XamlName = Path.GetFileNameWithoutExtension(outFileName),
-                    Prefix = namePrefix,
-                    UseComponentResKeys = useComponentResKeys,
-                    NameSpace = nameSpace,
-                    NameSpaceName = nameSpaceName,
+                    Prefix = null,
+                    UseComponentResKeys = false,
+                    NameSpace = null,
+                    NameSpaceName = null,
 
                 };
                 File.WriteAllText(outFileName, ConverterLogic.SvgDirToXaml(CurrentDir, resKeyInfo, false));
