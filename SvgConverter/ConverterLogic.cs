@@ -19,7 +19,8 @@ namespace SvgConverter
     public enum ResultMode
     {
         DrawingGroup,
-        DrawingImage
+        DrawingImage,
+        DrawingBrush
     }
     public static class ConverterLogic
     {
@@ -68,6 +69,9 @@ namespace SvgConverter
                 case ResultMode.DrawingImage:
                     name = BuildDrawingImageName(elementName, resKeyInfo);
                     return DrawingToImage(dg);
+                case ResultMode.DrawingBrush:
+                    name = BuildDrawingBrushName(elementName, resKeyInfo);
+                    return DrawingToBrush(dg);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(resultMode));
             }
@@ -89,11 +93,11 @@ namespace SvgConverter
 
         public static string SvgDirToXaml(string folder, ResKeyInfo resKeyInfo, bool filterPixelsPerDip)
         {
-            return SvgDirToXaml(folder, resKeyInfo, null, filterPixelsPerDip);
+            return SvgDirToXaml(folder, resKeyInfo, null, filterPixelsPerDip, false, true);
         }
 
         public static string SvgDirToXaml(string folder, ResKeyInfo resKeyInfo, WpfDrawingSettings wpfDrawingSettings,
-            bool filterPixelsPerDip, bool handleSubFolders = false)
+            bool filterPixelsPerDip, bool handleSubFolders = false, bool brush = false)
         {
             //firstChar Upper
             var firstChar = char.ToUpperInvariant(resKeyInfo.XamlName[0]);
@@ -117,9 +121,13 @@ namespace SvgConverter
             }
 
             AddNameSpaceDef(doc.Root, resKeyInfo);
-            //ReplaceBrushesInDrawingGroups(doc.Root, resKeyInfo);
-            AddDrawingImagesToDrawingGroups(doc.Root);
-            return doc.ToString();
+
+            if (brush)
+                AddDrawingBrushesToDrawingGroups(doc.Root);
+            else
+                AddDrawingImagesToDrawingGroups(doc.Root);
+
+            return doc.ToString().Replace("DrawingGroup}\" />", "DrawingGroup}\" />" + Environment.NewLine + Environment.NewLine);
         }
 
         public static IEnumerable<string> SvgFilesFromFolder(string folder, bool handleSubFolders = false)
@@ -252,12 +260,30 @@ namespace SvgConverter
                 //get Name of DrawingGroup
                 var nameDg = node.Attribute(Nsx + "Key").Value;
                 var nameImg = nameDg.Replace("DrawingGroup", "DrawingImage");
-                //<DrawingImage x:Key="xxx" Drawing="{StaticResource cloud_5_icon_DrawingGroup}"/>
+
                 var drawingImage = new XElement(NsDef + "DrawingImage",
                     new XAttribute(Nsx + "Key", nameImg),
                     new XAttribute("Drawing", string.Format(CultureInfo.InvariantCulture, "{{StaticResource {0}}}", nameDg))
                     );
                 node.AddAfterSelf(drawingImage);
+            }
+        }
+
+        private static void AddDrawingBrushesToDrawingGroups(XElement rootElement)
+        {
+            var drawingGroups = rootElement.Elements(NsDef + "DrawingGroup").ToList();
+            foreach (var node in drawingGroups)
+            {
+                //get Name of DrawingGroup
+                var nameDg = node.Attribute(Nsx + "Key").Value;
+                var nameImg = nameDg.Replace("DrawingGroup", "Icon");
+
+                var drawingBrush = new XElement(NsDef + "DrawingBrush",
+                    new XAttribute(Nsx + "Key", nameImg),
+                    new XAttribute("Drawing", string.Format(CultureInfo.InvariantCulture, "{{StaticResource {0}}}", nameDg))
+                );
+
+                node.AddAfterSelf(drawingBrush);
             }
         }
 
@@ -403,6 +429,11 @@ namespace SvgConverter
         internal static DrawingImage DrawingToImage(Drawing drawing)
         {
             return new DrawingImage(drawing);
+        }
+
+        internal static DrawingBrush DrawingToBrush(Drawing drawing)
+        {
+            return new DrawingBrush(drawing);
         }
 
         internal static string WpfObjToXaml(object wpfObject, bool includeRuntime)
@@ -581,6 +612,11 @@ namespace SvgConverter
         internal static string BuildDrawingImageName(string elementName, ResKeyInfo resKeyInfo)
         {
             var rawName = elementName + "DrawingImage";
+            return BuildResKey(rawName, resKeyInfo);
+        }
+        internal static string BuildDrawingBrushName(string elementName, ResKeyInfo resKeyInfo)
+        {
+            var rawName = elementName + "Icon";
             return BuildResKey(rawName, resKeyInfo);
         }
 

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Windows;
 using System.Xml.Linq;
 using BKLib.CommandLineParser;
 
@@ -49,7 +48,7 @@ namespace SvgConverter
                 NameSpaceName = compResKeyNSName,
             };
 
-            File.WriteAllText(outFileName, ConverterLogic.SvgDirToXaml(inputdir, resKeyInfo, null, filterPixelsPerDip, handleSubFolders));
+            File.WriteAllText(outFileName, ConverterLogic.SvgDirToXaml(inputdir, resKeyInfo, null, filterPixelsPerDip, handleSubFolders, true));
             Console.WriteLine("xaml written to: {0}", outFileName);
 
             if (buildhtmlfile)
